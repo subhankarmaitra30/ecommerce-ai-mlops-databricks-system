@@ -1,0 +1,170 @@
+1. Architectural Context
+
+The Bronze layer establishes the ingestion boundary of the ecommerce analytics platform by preserving 
+behavioural event data within governed Delta storage.The objective of this stage is controlled source 
+preservation combined with operational reliability and reproducibility guarantees aligned with
+Medallion Architecture principles.
+No analytical transformation is introduced at this layer.
+
+2. Objectives
+
+Bronze implementation supports:
+   immutable source preservation.
+   auditability and rollback capability.
+   reproducible experimentation.
+   scalable downstream analytics.
+   machine learning feature preparation.
+Early-stage data mutation is intentionally minimized.
+
+
+3. Dataset Consolidation
+
+October and November ecommerce behavioural datasets were consolidated into a unified ingestion stream.
+Dataset characteristics:
+    approximately 100 million event records.
+    standardized schema alignment across ingestion sources.
+    consistent event-level representation.
+Events capture user browsing behaviour, product interaction, and session activity.
+No analytical filtering or enrichment was applied during consolidation.
+
+4. Platform Constraint and Storage Adaptation
+
+Databricks Serverless environments disable public DBFS root access as part of platform governance controls.
+Legacy path-based Delta writes (e.g., /delta/...) were therefore unsupported.Storage implementation
+adopted Unity Catalog managed infrastructure.
+
+Benefits:
+   centralized metadata governance.
+   fine-grained access control.
+   persistent table registration.
+   platform-native discoverability.
+This approach aligns with modern cloud data platform deployment standards.
+
+
+
+5. Bronze Layer Implementation Strategy
+Bronze storage consists of two controlled datasets.
+
+5.1 RAW Bronze Dataset
+Table:  "workspace.ecommerce.bronze_events_raw"
+
+Purpose:
+   preserve ingestion output exactly as received.
+   provide rollback reference state.
+   support debugging and reprocessing workflows.
+   maintain authoritative audit baseline.
+No structural enhancement beyond ingestion mechanics was applied.
+
+5.2 CLEAN Bronze Dataset
+
+Table:  "workspace.ecommerce.bronze_events_clean"
+
+Purpose:
+  provide structurally stable operational dataset.
+  prepare ingestion output for downstream transformation.
+
+Enhancements applied:
+  timestamp datatype normalization.
+  ingestion metadata capture.
+  removal of fully empty records.
+No business logic or analytical filtering was introduced.
+
+
+6. Engineering Enhancements
+
+Timestamp Normalization
+"event_time" converted from string to timestamp datatype.
+Enables:
+   temporal aggregation.
+   session reconstruction.
+   streaming compatibility.
+
+Ingestion Metadata Tracking
+"ingestion_time" column introduced to capture system arrival time.
+Supports:
+   audit traceability.
+   ingestion latency monitoring.
+   operational SLA verification.
+
+Structural Sanitization
+Fully empty records removed to eliminate ingestion artefacts without altering dataset semantics.
+
+
+7. Storage Strategy
+
+Bronze datasets were registered as Unity Catalog managed Delta tables:
+    workspace.ecommerce.bronze_events_raw
+    workspace.ecommerce.bronze_events_clean
+
+Managed tables provide:
+   transactional consistency.
+   catalog discoverability.
+   persistent metadata lifecycle management.
+
+Tables remain accessible through SQL and Spark workloads.
+
+
+8. Transactional Storage Selection — Delta Lake
+Delta Lake introduces database-grade guarantees into the data lake environment.
+
+Capabilities leveraged:
+
+ACID Transactions
+Prevent partial writes and ensure consistency during concurrent operations.
+
+Time Travel
+Enable historical dataset reconstruction and rollback recovery.
+
+Schema Enforcement
+Protect against unintended structural drift during ingestion evolution.
+
+These guarantees support auditability and reproducible experimentation workflows.
+
+
+9. Operational Guarantees Established
+
+Bronze now provides:
+  version-controlled storage.
+  snapshot isolation.
+  rollback safety.
+  ingestion audit traceability.
+  deterministic dataset reconstruction.
+These guarantees establish Bronze as a stable operational baseline.
+
+
+10. Medallion Architecture Boundary
+
+The following were intentionally excluded from Bronze:
+  domain filtering.
+  analytical aggregation.
+  business-rule deduplication.
+  feature engineering.
+Such transformations are deferred to Silver and Gold layers.
+
+
+
+11. Forward Compatibility
+
+Design decisions support future platform evolution including:
+  incremental ingestion workflows.
+  schema evolution management.
+  Silver data quality enforcement.
+  feature store integration.
+  lineage observability tooling.
+Bronze acts as a scalable ingestion foundation.
+
+
+12. Outcome
+
+Day 0 Bronze construction successfully transitioned ingestion outputs into governed Delta tables 
+aligned with enterprise data engineering practices.
+The platform now supports reliable downstream transformation while preserving source transparency
+and operational resilience.
+
+
+
+
+
+
+
+
