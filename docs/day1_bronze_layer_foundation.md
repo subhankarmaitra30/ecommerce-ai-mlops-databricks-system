@@ -1,4 +1,4 @@
-Day 0 — Bronze Layer Construction
+Day 1 — Bronze Layer Build UP
 
 
 1. Architectural Context
@@ -8,6 +8,23 @@ Its purpose is not analytical transformation, but controlled preservation of beh
 
 The objective of this stage is not analytical transformation, but controlled data preservation combined with operational reliability and reproducibility guarantees aligned with Medallion Architecture principles.This layer establishes the  foundation upon which Silver and Gold layers depend.
 
+Platform Architecture
+Kaggle Dataset
+        │
+        ▼
+Databricks Ingestion Pipeline
+        │
+        ▼
+Unity Catalog
+        │
+        ▼
+workspace.ecommerce
+        │
+        ├── bronze_events_raw
+        └── bronze_events
+                partitioned by event_date
+
+                
 
 2. Design Principles
 
@@ -26,7 +43,7 @@ This ensures that all downstream processing remains deterministic and traceable 
 Behavioural event datasets from October and November were consolidated into a unified ingestion stream.
 
 Resulting dataset:
-~100 million interaction records.(~86% brand attribution completeness. ~67% category metadata availability.)
+~110 million interaction records.(~86% brand attribution completeness. ~67% category metadata availability.)
 Standardized schema alignment across ingestion sources.
 Event-level granularity (user behaviour, product interactions, session activity).
 
@@ -61,9 +78,9 @@ Serve as immutable reference state.
 Support rollback and reprocessing.
 Provide authoritative audit baseline.
 
-This dataset is intentionally unmodified beyond ingestion mechanics.
+This dataset is intentionally unmodified beyond ingestion mechanics.The RAW Bronze table is treated as append-only and operationally immutable,serving as the authoritative ingestion snapshot.
 
-5.2 CLEAN Bronze (workspace.ecommerce.bronze_events_clean)
+5.2 CLEAN Bronze (workspace.ecommerce.bronze_events)
 
 Purpose:
 Provide structurally stable working copy.
@@ -80,7 +97,7 @@ No business logic or domain filtering was applied.
 
 6. Transactional Storage Selection — Delta Lake
 
-Delta Lake was selected to introduce database-grade guarantees into the data lake.
+Delta Lake was selected to introduce database-grade guarantees into the data lake.Delta Lake enables reliable ingestion by introducing transactional guaranteesinto the data lake layer, ensuring that large-scale event datasets can be written, queried, and versioned safely without corruption or partial updates.
 
 Capabilities leveraged:---
 ACID Transactions : Prevent partial writes and ensure consistency under concurrent operations.
@@ -124,7 +141,34 @@ Feature store integration
 Lineage observability tooling
 The Bronze layer is therefore scalable, not static.
 
-10. Outcome
+10. Physical Storage Layout
 
-Day 0 successfully transitioned raw ingestion outputs into governed, ACID-compliant Delta tables aligned with enterprise data engineering practices.
+The Bronze dataset is partitioned by event_date.
+This partitioning strategy enables partition pruning during query execution,
+reducing unnecessary data scanning and improving performance for time-bounded queries.
+
+Example layout:
+bronze_events/
+  event_date=2019-10-01/
+  event_date=2019-10-02/
+  ....
+
+12. Dataset Integrity Validation
+The Bronze layer was validated through several integrity checks:
+Row count verification
+Event distribution validation
+Schema inspection
+Delta transaction history verification
+
+Final dataset size: 109,950,743 events
+
+Event distribution:
+view        ~104M
+cart         ~3.9M
+purchase     ~1.6M
+
+
+11. Outcome
+
+Day 1 successfully transitioned raw ingestion outputs into governed, ACID-compliant Delta tables aligned with enterprise data engineering practices.
 The platform now supports reliable downstream transformation while preserving source transparency, operational resilience, and reproducible state management.
