@@ -118,7 +118,7 @@ The orchestration job is configured with the following parameters:
 
 | Configuration     | Value                    |
 | ----------------- | ------------------------ |
-| Job Name          | Ecommerce Data Pipeline  |
+| Job Name          |Silver Pipeline  |
 | Execution Type    | Notebook Task            |
 | Compute           | Serverless               |
 | Runtime Parameter | Pipeline layer selection |
